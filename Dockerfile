@@ -1,4 +1,4 @@
-FROM library/ubuntu:xenial
+FROM ubuntu:xenial
 
 MAINTAINER ludd@cbs.dtu.dk
 
@@ -12,6 +12,7 @@ ENV TERM=xterm
 ENV DEBUG='true'
 ENV CODE_BASE=development
 ENV ENVIRONMENT=docker
+ENV GOPATH=/root/go
 
 # Add favourite commands
 RUN echo 'alias ..="cd .."' > /root/.bash_aliases
@@ -24,8 +25,7 @@ RUN mkdir -p /var/run/app
 RUN chown www-data:www-data /var/run/app
 
 # Install dependencies
-RUN apt-get update
-RUN apt-get upgrade -y
+RUN apt-get update -y && apt-get -y upgrade
 RUN apt-get install -y \
     apache2 \
     curl \
@@ -128,8 +128,20 @@ RUN npm install -g gulp-cli
 # Install jekyll
 RUN gem install jekyll bundler
 
+# Install Go
+RUN wget https://storage.googleapis.com/golang/go1.8.3.linux-amd64.tar.gz
+RUN tar -C /usr/local -xzf go1.8.3.linux-amd64.tar.gz && rm go1.8.3.linux-amd64.tar.gz
+RUN export PATH=$PATH:/usr/local/go/bin
+
+# Install Revel and Buffalo
+RUN go get -u -v github.com/revel/cmd/revel
+RUN go get -u -v github.com/gobuffalo/buffalo/...
+RUN go install -v github.com/gobuffalo/buffalo/buffalo
+RUN export PATH=$PATH:$GOPATH/bin
+
 # Clean installation
 RUN apt-get autoremove -y
+RUN rm  -rf /tmp/* /var/cache/apk/*
 
 # Settings
 RUN a2enmod ssl
